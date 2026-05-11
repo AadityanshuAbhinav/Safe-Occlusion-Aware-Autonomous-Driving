@@ -1,0 +1,11 @@
+# Blind Intersection Scenario — Dependencies
+# ==========================================
+# CARLA 0.9.16 built from source, Python 3.8+
+
+# Install the CARLA egg/wheel from your build output, e.g.:
+#   pip install ~/carla/PythonAPI/carla/dist/carla-0.9.16-cp38-cp38-linux_x86_64.whl
+# or add the egg to PYTHONPATH:
+#   export PYTHONPATH=$PYTHONPATH:~/carla/PythonAPI/carla/dist/carla-0.9.16-cp38-cp38-linux_x86_64.egg
+
+numpy>=1.21
+shapely>=2.0      # polygon ops for H̃ and D — pure Python, no C dependency issues

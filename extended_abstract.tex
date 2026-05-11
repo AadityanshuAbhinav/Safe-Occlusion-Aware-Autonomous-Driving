@@ -1,0 +1,293 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[top=20mm,bottom=22mm,left=22mm,right=22mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{subcaption}
+
+
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black}
+
+% ── Section: numbered, bold, small-caps feel, rule underneath ────────────────
+\titleformat{\section}
+  {\normalfont\normalsize\bfseries\uppercase}
+  {\thesection.}{0.6em}{}
+  [\vspace{-4pt}\rule{\linewidth}{0.4pt}\vspace{2pt}]
+\titlespacing*{\section}{0pt}{10pt plus 2pt}{4pt plus 1pt}
+
+% ── Subsection: bold, no number, compact ────────────────────────────────────
+\titleformat{\subsection}[runin]
+  {\normalfont\normalsize\bfseries}
+  {}{0em}{}[.\enspace]
+\titlespacing*{\subsection}{0pt}{6pt plus 1pt}{0pt}
+
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{3pt}
+
+% ── List spacing ─────────────────────────────────────────────────────────────
+\setlist{itemsep=1pt, topsep=3pt, parsep=0pt}
+
+% =============================================================================
+\begin{document}
+\singlespacing
+
+% ── Header block ─────────────────────────────────────────────────────────────
+\begin{center}
+  {\small Department of Mechanical Engineering,\enspace
+   Indian Institute of Technology Madras,\enspace Chennai 600\,036}\\[4pt]
+  \rule{\linewidth}{1.2pt}\\[6pt]
+  {\large\bfseries Extended Abstract}\\[6pt]
+  \rule{\linewidth}{0.6pt}
+\end{center}
+
+\vspace{4pt}
+
+% ── Title and metadata ───────────────────────────────────────────────────────
+\begin{center}
+  {\normalsize\bfseries
+   Autonomous Emergency Evasion at Blind Intersections:\\[2pt]
+   From Formal Safety Theory to Hardware Deployment}
+\end{center}
+
+\vspace{6pt}
+
+\noindent
+\begin{tabular}{@{}p{0.18\linewidth}@{\hspace{4pt}}p{0.78\linewidth}@{}}
+  \textbf{Student}  & Aadityanshu Abhinav \enspace (Roll No.\ ME22B088) \\[2pt]
+  \textbf{Guide}    & Dr.\ Anuj Kumar Tiwari, Assistant Professor,
+                      Department of Mechanical Engineering, IIT Madras \\
+  % \textbf{Period}   & January -- May 2026 \\
+\end{tabular}
+
+\vspace{6pt}
+\noindent\rule{\linewidth}{0.6pt}
+\vspace{4pt}
+
+% =============================================================================
+\section{Introduction and Objectives}
+% =============================================================================
+
+Blind intersections -- junctions where cross-traffic is hidden by a building corner, a
+parked truck, or a road curve -- represent one of the most dangerous situations in
+autonomous driving. A vehicle approaching such a junction cannot determine whether a
+threat exists until it is already within braking distance. Reactive planners that respond
+only to observed obstacles are inadequate because the threat may appear too late to stop
+for. Conversely, worst-case methods that assume a pursuer always exists force the vehicle
+to stop far in advance of junctions that any human driver would pass without concern.
+
+This project addresses the blind-intersection evasion problem in three stages:
+(i)~implement and extend the game-theoretic occlusion-aware framework of Zhang and
+Fisac~\cite{zhang2021occlusion} in the CARLA simulation environment and validate every
+FSM state; (ii)~port the full planner stack to the PIX Moving Hooke autonomous
+chassis equipped with a 32-beam 3D LiDAR, a 2D near-field guard, and a Jetson Orin
+Nano; and (iii)~validate the complete evasion stack in outdoor hardware experiments at
+3\,km/h with a Yujin Robots Kobuki mobile robot as the pursuer, demonstrating all four evasion outcomes -- push-through,
+lateral dodge, curb climb, and reverse -- with zero contacts.
+
+% =============================================================================
+\section{Literature Review}
+% =============================================================================
+
+\subsection*{Forward reachability} The dominant prior approach computes a Forward
+Reachable Set (FRS) for the worst-case hidden vehicle, requiring the ego to remain
+outside the FRS or stop before it reaches the conflict zone. The FRS grows continuously
+and does not shrink as the ego gains sensor evidence that parts of the occluded region
+are empty. Neel and Saripalli~\cite{neel2020occluded} reduce this conservatism by
+propagating velocity bounds derived from intersection geometry, but over-conservatism
+remains inherent to the paradigm.
+
+\subsection*{Game-theoretic planning} Zhang and Fisac~\cite{zhang2021occlusion} observe
+that the over-conservatism of the FRS approach arises because it ignores the ego's
+future ability to react once the pursuer becomes visible. They model the situation as a
+two-mode zero-sum hybrid dynamic game: in the \emph{open-loop} phase (pursuer hidden),
+the ego plays against the worst-case pursuer using a \emph{hidden set} -- the
+forward reach-avoid set of all positions from which a pursuer could emerge; in the
+\emph{closed-loop} phase (pursuer detected), the ego switches to a feedback evasion
+strategy from the capture-basin reach-avoid game. This hybrid approach is provably safe
+and demonstrably less conservative across three CARLA scenarios: a blind summit, a
+T-intersection, and a truck-overtaking manoeuvre.
+
+\subsection*{Gap addressed} None of the above works demonstrate hardware deployment on a
+physical vehicle with a real sensor stack. This project bridges that gap end-to-end.
+
+% =============================================================================
+\section{Methodology}
+% =============================================================================
+
+\subsection*{Theoretical framework}
+The hidden set $\tilde{H}(t)$ is maintained as a 2-D Shapely polygon and updated every
+planning tick through four operations: (1)~union of newly occluded road area behind
+LiDAR hits; (2)~outward propagation by $v_{\max,\text{pur}}\,\Delta t$;
+(3)~subtraction of the confirmed-clear polygon from unblocked rays; and (4)~velocity-bound
+pruning that prevents unbounded growth. The safe-passage condition (Theorem~1) requires
+$\tilde{H}(t)\cap D(t)\approx\emptyset$, where $D(t)$ is the braking-distance corridor
+ahead of the ego.
+
+\subsection*{CARLA simulation}
+Implemented in CARLA 0.9.16 (Town03) with a simulated 32-channel ray-cast LiDAR. Three
+actors are used: a grey PIX Moving Hooke (ego), a red truck (occluder), and a red Tesla
+Model 3 (pursuer). A five-state FSM (APPROACHING $\to$ PEEKING $\to$ PROCEEDING /
+EVADING / YIELDING) governs the ego. A critical ego-yaw rotation correction was
+identified and applied when converting sensor-local shadow angles to the world frame;
+without it, the hidden set remains empty regardless of occlusion geometry.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\linewidth]{CARLA_Scenario.png}
+    \caption{A top view snapshot of the simulation scenario in CARLA: the grey vehicle travelling to the left is the agent, the red truck the occluder and the red car heading up is the pursuer.}
+    \label{fig:carla_1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\linewidth]{carla_iso.png}
+    \caption{An isometric view snapshot of the simulation scenario in CARLA: the grey vehicle is the agent, while the red truck is the occluder; the state on the planner is \textbf{PEEKING} and the pursuer is hidden behind the occluder}
+    \label{fig:carla_iso}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  % First subfigure
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{carla_purs1.png}
+    \caption{Pursuer partially visible: planner in \textbf{PEEKING} state}
+    \label{fig:carla_purs_vis1}
+  \end{subfigure}
+  \hfill
+  % Second subfigure
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{carla_purs_2.png}
+    \caption{Pursuer fully visible: planner transitioning to \textbf{EVADING} state}
+    \label{fig:carla_purs_vis2}
+  \end{subfigure}
+  
+  \caption{Successive snapshots of the pursuer emerging from behind the occluder, invoking a transition from \textbf{PEEKING} to \textbf{EVADING} state}
+  \label{fig:CARLA_trans}
+\end{figure}
+
+\subsection*{Hardware testbed}
+The platform consists of: \textbf{Chassis} -- PIX Moving Hooke (2.6\,m\,$\times$\,1.7\,m),
+CAN bus at 500\,kbit/s, 100\,ms VCU watchdog; \textbf{Primary sensor} -- Ouster OS1-32
+(32-beam, 10\,Hz, 360$^\circ$\,H\,$\times$\,$\pm$22.5$^\circ$\,V), mounted upright at 1.3\,m above deck; \textbf{Secondary sensor} -- YDLidar X2 (2D, 8\,m),
+front-mounted facing rearward, providing front and side collision guard coverage; \textbf{Compute} -- Jetson Orin
+Nano 8\,GB, Ubuntu 22.04, Python 3.10, three concurrent processes using $<$55\,\% of
+3 CPU cores and ${\sim}$340\,MB RAM. A Tata Altroz was used as the occluder, while a Yujin Robots Kobuki was used as the pursuer.
+
+\subsection*{System architecture}
+Three processes run concurrently. The \textbf{YDLidar Forwarder} reads the 2D LiDAR over USB and broadcasts a JSON safety packet (front, left, right distances) over UDP. The \textbf{Scenario Planner} reads the Ouster OS1-32 directly over Ethernet via a daemon thread, receives YDLidar packets, and runs the hidden-set tracker, FSM, motion planner, and all four LiDAR safety guards (Ouster front/side, YDLidar front/side) internally; guards override the FSM command by strict priority (estop $>$ brake $>$ drive). The \textbf{CAN Writer} transmits the resulting CAN frames at 20\,Hz. Only the CAN Writer writes to the vehicle bus; a crash of any single process does not leave the bus unattended.
+
+\subsection*{Evasion priority stack}
+When Theorem~1 is violated or the pursuer is detected, the planner evaluates four
+options in order: (1)~\textbf{PUSH} -- sprint through if time-to-contact allows the ego
+to clear first; (2)~\textbf{Lateral Dodge} -- bounded swerve of up to 0.8\,m toward the
+curb if lane clearance permits; (3)~\textbf{Curb Climb} -- partial swerve using all
+available clearance; (4)~\textbf{Reverse} -- back up along the approach path until the
+OBB gap exceeds 5.0\,m. Near-field body separation is computed via the Separating Axis
+Theorem (SAT) on oriented bounding boxes (OBBs).
+
+\subsection*{Calibration and safety}
+Steering encoder calibration (four setpoints, raw CAN value vs.\ hand-measured
+road-wheel angle) confirmed decode divisor 22.0; consistent ${\sim}$2.5$^\circ$
+under-read attributed to measurement parallax. Odometry closure error: $<$0.3\,m over a
+16\,m square path. A human operator held the RC kill-switch -- the sole mechanism that
+halts the vehicle independently of the script -- throughout every run. Operating speed
+was capped at 0.833\,m/s (3\,km/h); all personnel outside a 5\,m exclusion zone. All
+runs were conducted at night on deserted roads to avoid interaction with regular traffic;
+no runs were conducted in rain due to LiDAR performance and electronics exposure
+constraints.
+
+% =============================================================================
+\section{Summary of Work Completed}
+% =============================================================================
+
+\noindent\textbf{(a) Hidden-set tracker.} Complete update pipeline implemented in Python
+(Shapely). Ego-yaw rotation bug identified and corrected. Runs at 10\,Hz on the Jetson;
+each update $<$30\,ms (200-vertex polygon).
+
+\noindent\textbf{(b) CARLA simulation.} FSM planner deployed and validated in CARLA
+0.9.16. All three qualitative outcomes (PUSH, BRAKE, lateral dodge) observed across
+repeated runs matching the baseline paper's Scenario~2 topology.
+
+\noindent\textbf{(c) Hardware integration.} Ported planner to PIX Moving Hooke.
+Implemented CAN odometry, pure-pursuit waypoint following, SAT-based OBB gap sensor,
+pursuer velocity tracker, and three-process safety architecture. All calibration and
+test scripts written and validated.
+
+\noindent\textbf{(d) Hardware-specific additions.} PEEKING-HOLD condition added (hold
+while pursuer tracker reports a converging cluster); all sensor filtering parameters
+tuned for real outdoor noise conditions.
+
+\noindent\textbf{(e) Outdoor experiments.} Twelve contested runs at 3\,km/h; results
+summarised in Table~\ref{tab:results}. All four evasion outcomes demonstrated; zero
+contacts.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Evasion outcome & Runs & Proportion \\
+\midrule
+PUSH (time-to-contact clear) & 3 & 25\,\% \\
+BRAKE / EVADING              & 6 & 50\,\% \\
+Lateral Dodge                & 2 & 17\,\% \\
+Reverse (NR)                 & 1 & \phantom{0}8\,\% \\
+\midrule
+\textbf{Total contested runs} & \textbf{12} &  --  \\
+\textbf{Contacts}             & \textbf{0}  &  --  \\
+\bottomrule
+\end{tabular}
+\caption{\small Evasion outcome distribution across 12 hardware trials.}
+\label{tab:results}
+\end{table}
+
+\noindent\textbf{(f) Key findings.}
+\begin{itemize}
+  \item The hidden-set framework correctly defers PROCEEDING when the shadow region is
+        occupied, clearing within 3--5 ticks on an unoccluded approach.
+  \item PEEKING-HOLD is necessary on hardware due to sensor noise; it conservatively
+        delays PROCEEDING without introducing false EVADING transitions.
+  \item At 3\,km/h the dominant outcome is BRAKE (${\sim}$0.08\,m braking distance always
+        within Theorem~1's margin); PUSH and dodge are exercised only at tight timing
+        windows, confirming the framework selects the correct action.
+  \item Four simulation-to-hardware gaps were identified and bridged: speed cap
+        (20\,km/h $\to$ 3\,km/h), pursuer type (vehicle $\to$ pedestrian), LiDAR
+        noise, and odometry drift.
+\end{itemize}
+
+% ── References ───────────────────────────────────────────────────────────────
+\renewcommand{\refname}{\normalsize\bfseries REFERENCES%
+  \vspace{-4pt}\\\rule{\linewidth}{0.4pt}\vspace{2pt}}
+{\small
+\begin{thebibliography}{9}
+\setlength{\itemsep}{1pt}
+
+\bibitem{zhang2021occlusion}
+Z.~Zhang and J.~F.~Fisac,
+``Safe Occlusion-aware Autonomous Driving via Game-Theoretic Active Perception,''
+\textit{arXiv:2105.08169}, 2021.
+
+\bibitem{neel2020occluded}
+G.~Neel and S.~Saripalli,
+``Improving Bounds on Occluded Vehicle States for Use in Safe Motion Planning,''
+in \textit{Proc.\ IEEE Int.\ Symp.\ Safety, Security, and Rescue Robotics (SSRR)},
+pp.\ 268--275, 2020.
+
+\bibitem{dosovitskiy2017carla}
+A.~Dosovitskiy \textit{et al.},
+``CARLA: An Open Urban Driving Simulator,''
+in \textit{Proc.\ 1st Annual Conf.\ on Robot Learning}, pp.\ 1--16, 2017.
+
+\end{thebibliography}
+}
+
+\end{document}
