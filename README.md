@@ -1,7 +1,9 @@
 # Safe Occlusion-Aware Autonomous Driving
 
-<!-- Replace the line below with your actual GIF once converted -->
-![Simulation evasion demo](demo.gif)
+<!-- Replace the filename below with your actual GIF once converted -->
+<div align="center">
+  <img src="demo.gif" alt="Hardware evasion demo" width="80%">
+</div>
 
 **Autonomous emergency evasion at blind intersections — from formal safety theory to hardware deployment.**
 
