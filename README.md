@@ -1,5 +1,8 @@
 # Safe Occlusion-Aware Autonomous Driving
 
+<!-- Replace the line below with your actual GIF once converted -->
+![Simulation evasion demo](demo.gif)
+
 **Autonomous emergency evasion at blind intersections — from formal safety theory to hardware deployment.**
 
 B.Tech Project, Department of Mechanical Engineering, IIT Madras  
@@ -16,9 +19,6 @@ This project implements and deploys the game-theoretic occlusion-aware framework
 1. **CARLA simulation** — hidden-set tracker, FSM planner, and all five FSM states validated in CARLA 0.9.16 (Town03).
 2. **Hardware port** — full planner stack running on a PIX Moving Hooke autonomous chassis with an Ouster OS1-32 3D LiDAR, a YDLidar X2 2D near-field guard, and a Jetson Orin Nano.
 3. **Outdoor experiments** — 12 contested runs at 3 km/h with a Yujin Robots Kobuki as the pursuer, all four evasion outcomes demonstrated, zero contacts.
-
-<!-- Replace the line below with your actual GIF once converted -->
-<!-- ![Hardware evasion demo](demo.gif) -->
 
 ---
 
