@@ -151,4 +151,4 @@ If you use this code, please cite the baseline paper this work extends:
 
 ## Acknowledgements
 
-To my guide **Dr. Anuj K. Tiwari** for guidance and resources and to **Mr. Suman Midda** for help with experiments
+To my guide **Dr. Anuj K. Tiwari** for guidance and resources and to **Mr. Suman Midda** for help with the experiments.
