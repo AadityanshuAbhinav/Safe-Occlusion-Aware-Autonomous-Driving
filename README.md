@@ -63,6 +63,10 @@ This project implements and deploys the game-theoretic occlusion-aware framework
 
 ## Hardware platform
 
+<div align="center">
+  <img src="demo.gif" alt="Hardware evasion demo" width="80%">
+</div>
+
 | Component | Spec |
 |---|---|
 | Chassis | PIX Moving Hooke (2.6 m × 1.7 m), CAN at 500 kbit/s |
