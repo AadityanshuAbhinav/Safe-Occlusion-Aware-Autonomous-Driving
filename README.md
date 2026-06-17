@@ -64,7 +64,7 @@ This project implements and deploys the game-theoretic occlusion-aware framework
 ## Hardware platform
 
 <div align="center">
-  <img src="demo.gif" alt="Hardware evasion demo" width="80%">
+  <img src="dodge_annotated.png" alt="Hardware evasion demo" width="80%">
 </div>
 
 | Component | Spec |
